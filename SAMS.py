@@ -1,6 +1,6 @@
 import mysql.connector
 import datetime
-conn = mysql.connector.connect(user='aayush',password='hellomoto',database='sams')
+conn = mysql.connector.connect(user='aayush',password='*********',database='sams')
 mycursor = conn.cursor()
 
 def faculty_login(user,pas):
