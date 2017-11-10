@@ -3,7 +3,7 @@ import datetime
 conn = mysql.connector.connect(user='aayush',password='hellomoto',database='sams')
 mycursor = conn.cursor()
 
-def login(user,pas):
+def faculty_login(user,pas):
     """returns True if correct id and password is passed"""
     try:
         #fetches password for the provided id from database
@@ -16,6 +16,17 @@ def login(user,pas):
         return True
     else:
         return False
+
+def student_login(user,pas):
+    try:
+        mycursor.execute("SELECT pass FROM Students WHERE admission_no = '{sid}'".format(sid = user))
+        if mycursor.fetchall()[0][0] == pas:
+            return True
+        else:
+            return False
+    except:
+        print("Wrong Username")
+
 
 def faculty_subject(user):
     """Checks the subject for the faculty"""
@@ -107,11 +118,7 @@ def update_anyday(user):
     except:
         print("Incorrect admission number or date format!")
 
-eid = input("\nEnter the username: ")
-password = input("\nEnter the password: ")
-
-
-def choice(ch,eid):
+def fchoice(ch,eid):
     """Calls the function which user enters as choice"""
     user = faculty_subject(eid) #subject related to the faculty
     if ch==1:
@@ -121,15 +128,137 @@ def choice(ch,eid):
     elif ch==3:
         update_anyday(user)
 
-if login(eid,password):
-    print("\nEnter one of the following options: ")
-    print("\n1. Update today's Attendance\n")
-    print("\n2. Check Attendance for a particular student\n")
-    print("\n3. Update the attendance of a student for a particular date\n")
-    ch = int(input())
-    if ch >=1 and ch <=3:
-        choice(ch,eid)
+def schoice(ch,sid):
+    if ch == 1:
+        check_subject_wise(sid)
+    elif ch == 2:
+        check_today(sid)
+
+def check_subject_wise(sid):
+    print("1. Cloud Computing")
+    print("\n2. Numerical Methods")
+    print("\n3. Design and analysis of algorithms")
+    print("\n4. Mobile apps for android")
+    print("\n5. Compiler Design")
+    print("\n6. CHECK OVERALL")
+    inp = int(input("Enter your choice: "))
+
+    try:
+        mycursor.execute("SELECT SUM(Cloud_Computing) FROM Attendance WHERE admission_no='{adm}'".format(adm = sid))
+        cloud = int(mycursor.fetchall()[0][0])
+    except:
+        cloud = "Not Marked"
+
+    try:
+        mycursor.execute("SELECT SUM(Numerical_Methods) FROM Attendance WHERE admission_no='{adm}'".format(adm = sid))
+        numerical = int(mycursor.fetchall()[0][0])
+    except:
+        numerical = "Not Marked"
+
+    try:
+        mycursor.execute("SELECT SUM(Daa) FROM Attendance WHERE admission_no='{adm}'".format(adm = sid))
+        daa = int(mycursor.fetchall()[0][0])
+    except:
+        daa = "Not Marked"
+
+    try:
+        mycursor.execute("SELECT SUM(Android) FROM Attendance WHERE admission_no='{adm}'".format(adm = sid))
+        android = int(mycursor.fetchall()[0][0])
+    except:
+        android = "Not Marked"
+
+    try:
+        mycursor.execute("SELECT SUM(Compiler_Design) FROM Attendance WHERE admission_no='{adm}'".format(adm = sid))
+        compiler = int(mycursor.fetchall()[0][0])
+    except:
+        compiler = "Not Marked"
+
+    if inp == 1:
+        print(cloud)
+    elif inp == 2:
+        print(numerical)
+    elif inp == 3:
+        print(daa)
+    elif inp == 4:
+        print(android)
+    elif inp == 5:
+        print(compiler)
+    elif inp == 6:
+        print("Cloud Computing\t\t\t\t",cloud)
+        print("Design And Analysis of Algortithms\t", daa)
+        print("Numerical Methods\t\t\t",numerical)
+        print("Mobile Apps for android\t\t\t",android)
+        print("Compiler Design\t\t\t\t",compiler)
+
+def check_today(sid):
+    today = datetime.date.today().strftime("%Y-%m-%d")
+    try:
+        mycursor.execute("SELECT Cloud_Computing FROM Attendance WHERE admission_no = '{adm}' AND date = '{date}'".format(adm = sid, date = today))
+        cloud = mycursor.fetchall()[0][0]
+    except:
+        cloud = "Not marked"
+    try:
+        mycursor.execute("SELECT Numerical_Methods FROM Attendance WHERE admission_no = '{adm}' AND date = '{date}'".format(adm = sid, date = today))
+        numerical = int(mycursor.fetchall()[0][0])
+    except:
+        numerical = "Not Marked"
+    try:
+        mycursor.execute("SELECT daa FROM Attendance WHERE admission_no = '{adm}' AND date = '{date}'".format(adm = sid, date = today))
+        daa = int(mycursor.fetchall()[0][0])
+    except:
+        daa = "Not marked"
+    try:
+        mycursor.execute("SELECT android FROM Attendance WHERE admission_no = '{adm}' AND date = '{date}'".format(adm = sid, date = today))
+        android = int(mycursor.fetchall()[0][0])
+    except:
+        android = "Not Marked"
+    try:
+        mycursor.execute("SELECT compiler FROM Attendance WHERE admission_no = '{adm}' AND date = '{date}'".format(adm = sid, date = today))
+        compiler = int(mycursor.fetchall()[0][0])
+    except:
+        compiler = "Not marked"
+    print("Cloud Computing\t\t\t\t",cloud)
+    print("Numerical Methods\t\t\t",numerical)
+    print("Design and Analysis of Algorithms\t",daa)
+    print("Mobile Apps for Android\t\t\t",android)
+    print("Compiler Design\t\t\t\t",compiler)
+
+def faculty_authentication(eid,password):
+    if faculty_login(eid,password):
+        print("\nEnter one of the following options: ")
+        print("\n1. Update today's Attendance\n")
+        print("\n2. Check Attendance for a particular student\n")
+        print("\n3. Update the attendance of a student for a particular date\n")
+        ch = int(input())
+        if ch >=1 and ch <=3:
+            fchoice(ch,eid)
+        else:
+            print("\nPlease enter from the above choices!!\n")
     else:
-        print("\nPlease enter from the above choices!!\n")
+        print("\nEnter correct password!")
+
+def student_authentication(sid,spass):
+    if student_login(sid,spass):
+        print("1. Check attendace for a particular subject ")
+        print("\n2. Check today's attendance")
+        inp = int(input("Enter your choice: "))
+        if inp>0 and inp<3:
+            schoice(inp,sid)
+        else:
+            print("\nPlease enter from above choices!!\n")
+    else:
+        print("\nEnter correct password!!")
+
+print("1.Teacher\t\t", end = ' ')
+print("2.Student")
+ans = int(input("Enter your choice: "))
+if ans == 1:
+    fid = input("Enter id: ")
+    fpass = input("Enter password: ")
+    faculty_authentication(fid,fpass)
+elif ans == 2:
+    sid = input("Enter id: ")
+    spass = input("Enter password: ")
+    student_authentication(sid,spass)
 else:
-    print("\nEnter correct password!")
+    print("Enter from the above options!")
