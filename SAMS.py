@@ -1,5 +1,6 @@
 import mysql.connector
 import datetime
+import smtplib
 conn = mysql.connector.connect(user='aayush',password='hellomoto',database='sams')
 mycursor = conn.cursor()
 
@@ -194,7 +195,7 @@ def check_today(sid):
     today = datetime.date.today().strftime("%Y-%m-%d")
     try:
         mycursor.execute("SELECT Cloud_Computing FROM Attendance WHERE admission_no = '{adm}' AND date = '{date}'".format(adm = sid, date = today))
-        cloud = mycursor.fetchall()[0][0]
+        cloud = int(mycursor.fetchall()[0][0])
     except:
         cloud = "Not marked"
     try:
@@ -249,6 +250,51 @@ def student_authentication(sid,spass):
     else:
         print("\nEnter correct password!!")
 
+def absent(sid):
+    """student with more than 4 days off will receive a mail"""
+    for i in range(5):
+        today_date = datetime.date.today() - datetime.timedelta(days = i)
+        today = today_date.strftime("%Y-%m-%d")
+        try:
+            mycursor.execute("SELECT Cloud_Computing FROM Attendance WHERE admission_no = '{adm}' AND date = '{date}'".format(adm = sid, date = today))
+            cloud = int(mycursor.fetchall()[0][0])
+        except:
+            return
+        try:
+            mycursor.execute("SELECT Numerical_Methods FROM Attendance WHERE admission_no = '{adm}' AND date = '{date}'".format(adm = sid, date = today))
+            numerical = int(mycursor.fetchall()[0][0])
+        except:
+            return
+        try:
+            mycursor.execute("SELECT daa FROM Attendance WHERE admission_no = '{adm}' AND date = '{date}'".format(adm = sid, date = today))
+            daa = int(mycursor.fetchall()[0][0])
+        except:
+            return
+        try:
+            mycursor.execute("SELECT android FROM Attendance WHERE admission_no = '{adm}' AND date = '{date}'".format(adm = sid, date = today))
+            android = int(mycursor.fetchall()[0][0])
+        except:
+            return
+        try:
+            mycursor.execute("SELECT compiler FROM Attendance WHERE admission_no = '{adm}' AND date = '{date}'".format(adm = sid, date = today))
+            compiler = int(mycursor.fetchall()[0][0])
+        except:
+            return
+        total = cloud + numerical + daa + android + compiler
+        if total>0:
+            return
+        else:
+            mycursor.execute("SELECT name FROM Students WHERE admission_no = '{adm}'".format(adm = sid))
+            name = mycursor.fetchall()[0][0].split()[0]
+            mycursor.execute("SELECT email FROM Students WHERE admission_no = '{adm}'".format(adm = sid))
+            emailid = mycursor.fetchall()[0][0]
+            content = name+", You have been absent for quite a while now. You might want to attend college now.\nThank You!"
+            mail = smtplib.SMTP("smtp.gmail.com",587)
+            mail.starttls()
+            mail.login("sharma.aayush42@gmail.com","")
+            mail.sendmail("sharma.aayush42@gmail.com",emailid,content)
+            mail.close()
+
 print("1.Teacher\t\t", end = ' ')
 print("2.Student")
 ans = int(input("Enter your choice: "))
@@ -262,3 +308,10 @@ elif ans == 2:
     student_authentication(sid,spass)
 else:
     print("Enter from the above options!")
+
+mycursor.execute("SELECT admission_no FROM students")
+t = mycursor.fetchall()
+stud_admission_no = []
+
+for i in t:
+    absent(i[0]) #calls absent for all students in t

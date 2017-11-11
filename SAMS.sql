@@ -19,10 +19,14 @@ CREATE TABLE Students(
 admission_no char(12), 
 name varchar(30),
 pass varchar(20),
+email varchar(40),
 CONSTRAINT admsn_no PRIMARY KEY(admission_no)
 );
+
 DROP TABLE Students;
 SELECT * FROM Students;
+
+//email attribute not inserted 
 
 INSERT INTO Students VALUES('15SCSE105086','Akanksha Singh','akanksha@gu');
 INSERT INTO Students VALUES('15SCSE105084','Raunak Tripathi','raunak@gu');
