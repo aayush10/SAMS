@@ -46,20 +46,24 @@ def update_today(user):
     """function to update today's Attendance for the students"""
 
     today = datetime.date.today().strftime("%Y-%m-%d") #today's date in string format
-
+    latest_update = datetime.date.today()
     #stores admission number of students in a list
     mycursor.execute("SELECT admission_no FROM students")
     t = mycursor.fetchall() #tuples in list
     stud_admission_no = []
-
     for i in t:
         stud_admission_no.append(i[0]) #extracting admission_no from tuples
 
     ans = input("All Present?(Y/N) ").upper()
     if ans == 'Y':
-        #Inserts all the admission_no in database with subject status as '1'
-        for i in stud_admission_no:
-            mycursor.execute("INSERT INTO Attendance(admission_no,date,{sub}) VALUES('{i}','{date}',1)".format(sub = user,i=i,date = today))
+        mycursor.execute("SELECT * FROM Attendance")
+        if latest_update == datetime.date.today() and len(mycursor.fetchall()) != 0:
+            for i in stud_admission_no:
+                mycursor.execute("UPDATE Attendance SET {sub} = 1".format(sub = user))
+        else:
+            #Inserts all the admission_no in database with subject status as '1'
+            for i in stud_admission_no:
+                mycursor.execute("INSERT INTO Attendance(admission_no,date,{sub}) VALUES('{i}','{date}',1)".format(sub = user,i=i,date = today))
         print("\nAttendance Updated Successfully!!!")
 
     else:
@@ -78,17 +82,26 @@ def update_today(user):
             absent.append(inp)
         print("Attendance Updated Successfully!!")
 
-        #Inserts the absent admission_no in database with subject status as '0'
-        for i in absent:
-            mycursor.execute("INSERT INTO Attendance(admission_no,date,{sub}) VALUES('{i}','{date}',0)".format(sub=user,i=i,date=today))
-
         #Updating present students' admission_no
         for i in absent:
             stud_admission_no.remove(i) #removes the absent students from the list
 
+        mycursor.execute("SELECT * FROM Attendance")
         #Inserts the remaining(present students) admission_no in the database with subject status as '1'
-        for i in stud_admission_no:
-            mycursor.execute("INSERT INTO Attendance(admission_no,date,{sub}) VALUES('{i}','{date}',1)".format(sub = user,i=i,date = today))
+        if latest_update == datetime.date.today() and len(mycursor.fetchall()) != 0:
+            for i in stud_admission_no:
+                mycursor.execute("UPDATE Attendance SET {sub} = 1".format(sub = user))
+            #Inserts the absent admission_no in database with subject status as '0'
+            for i in absent:
+                mycursor.execute("UPDATE Attendance SET {sub} = 0 WHERE admission_no = '{adm}'".format(sub = user, adm = i))
+        else:
+            #Inserts all the admission_no in database with subject status as '1'
+            for i in stud_admission_no:
+                mycursor.execute("INSERT INTO Attendance(admission_no,date,{sub}) VALUES('{i}','{date}',1)".format(sub = user,i=i,date = today))
+            #Inserts the absent admission_no in database with subject status as '0'
+            for i in absent:
+                mycursor.execute("INSERT INTO Attendance(admission_no,date,{sub}) VALUES('{i}','{date}',0)".format(sub=user,i=i,date=today))
+                    
     conn.commit()
 
 def check_attendance(user):
@@ -314,4 +327,55 @@ t = mycursor.fetchall()
 stud_admission_no = []
 
 for i in t:
-    absent(i[0]) #calls absent for all students in t
+    stud_admission_no.append(i[0])
+
+def merge(stud_admission_no, l, m, r):
+    n1 = m - l + 1
+    n2 = r- m
+
+    # create temp stud_admission_noays
+    L = []
+    R = []
+
+    for i in range(0 , n1):
+        L.append(stud_admission_no[l + i])
+
+    for j in range(0 , n2):
+        R.append(stud_admission_no[m + 1 + j])
+
+    i = 0
+    j = 0
+    k = l
+
+    while i < n1 and j < n2 :
+        if L[i] <= R[j]:
+            stud_admission_no[k] = L[i]
+            i += 1
+        else:
+            stud_admission_no[k] = R[j]
+            j += 1
+        k += 1
+
+    while i < n1:
+        stud_admission_no[k] = L[i]
+        i += 1
+        k += 1
+
+    while j < n2:
+        stud_admission_no[k] = R[j]
+        j += 1
+        k += 1
+
+def mergeSort(stud_admission_no,l,r):
+    if l < r:
+        m = (l+(r-1))//2
+
+        mergeSort(stud_admission_no, l, m)
+        mergeSort(stud_admission_no, m+1, r)
+        merge(stud_admission_no, l, m, r)
+
+n = int(len(stud_admission_no))
+mergeSort(stud_admission_no,0,n-1)
+
+for i in stud_admission_no:
+    absent(i) #calls absent for all students in t
